@@ -1,0 +1,24 @@
+version: 0.2
+
+phases:
+  install:
+    commands:
+      - echo "Installing dependencies"
+      - pip install --upgrade awscli aws-sam-cli
+      - echo "Installing Python 3.12"
+      - pyenv install 3.12.0
+      - pyenv global 3.12.0
+      - python --version  # Verify installation
+
+  pre_build:
+    commands:
+      - echo "Starting SAM build"
+      - sam build
+  build:
+    commands:
+      - echo "Packaging SAM application"
+      - echo "S3_bucket is $S3_BUCKET"
+      - sam package --s3-bucket $S3_BUCKET --output-template-file packaged.yaml
+artifacts:
+  files:
+    - packaged.yaml
