@@ -73,46 +73,28 @@ def ddb_deserialize(data, type_deserializer = TypeDeserializer()):
         return data
     
 
-def create_vehicle_result(found_vehicles: list):
-    try:
-        result_list = []
+def create_vehicle_result(vehicle: dict):
+    image_indexes = ['imageExterior', 'imageInterior', 'imageManual']
+    result_indexes = ['exterior', 'interior', 'manual']
+    images_data = {}
 
-        for vehicle in found_vehicles:
-            image_indexes = ['imageExterior', 'imageInterior', 'imageManual']
-            result_indexes = ['exterior', 'interior', 'manual']
-            images_data = {}
+    for idx, image_index in enumerate(image_indexes):
+        for image in vehicle.get(image_index, []):
+            images_data.setdefault(result_indexes[idx], []).append({
+                'photo_name': image['imageTag'],
+                'url': image['imageUrl'],
+            })
 
-            for idx, image_index in enumerate(image_indexes):
-                for image in vehicle[image_index]:
-                    if image_index in images_data:
-                        images_data[result_indexes[idx]].append({
-                            'photo_name': image['imageTag'],
-                            'url': image['imageUrl']
-                        })
-                    else:
-                        images_data[result_indexes[idx]] = [{
-                            'photo_name': image['imageTag'],
-                            'url': image['imageUrl']
-                        }]
-
-            result_entry = {
-                "client": vehicle['clientIdentifier'],
-                "rooftop": "NEEDED",
-                "vehicle": {
-                    "image_set": {
-                        "capture_dts_UTC": "NEEDED",
-                        "nodeid": vehicle['pk'],
-                        "VIN": vehicle['assetIdentifier']
-                    }
-                },
-                "images": images_data
-            }
-
-            result_list.append(result_entry)
-        logger.error(result_list)
-        return result_list
-    except Exception as ex:
-        logger.error(str(ex))
+    return {
+        "client": vehicle['clientIdentifier'],
+        "vehicle": {
+            "image_set": {
+                "nodeid": vehicle['pk'],
+                "VIN": vehicle['assetIdentifier'],
+            },
+            "images": images_data,
+        },
+    }
 
 
 def query_for_vehicles(client: str, identifier: str):
@@ -132,18 +114,15 @@ def query_for_vehicles(client: str, identifier: str):
         logger.error(ex)
 
 
-def create_response(status_code: int, message: str = None, data=None) -> dict:
-    '''Creates a response dict for the lambda function to return.'''
-    body = {}
-    if message:
-        body["message"] = message
-    if data is not None:
-        body["data"] = data
-
+def make_response(status_code: int, body: dict) -> dict:
     return {
         "statusCode": status_code,
-        "body": json.dumps(body)
+        "body": json.dumps(body),
     }
+
+
+def error_response(status_code: int, message: str) -> dict:
+    return make_response(status_code, {"message": message})
 
 
 def lambda_handler(event, context):
@@ -154,11 +133,13 @@ def lambda_handler(event, context):
 
         provided_key = get_header(event.get('headers'), 'x-api-key')
         if not is_authorized(client, provided_key):
-            return create_response(401, "Unauthorized")
+            return error_response(401, "Unauthorized")
 
         items = query_for_vehicles(client, identifier)
-        result = create_vehicle_result(items)
-        return create_response(200, data=result)
+        if not items:
+            return error_response(403, "Vehicle not found")
+
+        return make_response(200, create_vehicle_result(items[0]))
     except Exception as ex:
         logger.error(str(ex))
-        return create_response(500, "Internal server error")
+        return error_response(500, "Internal server error")

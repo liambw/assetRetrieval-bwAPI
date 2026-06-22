@@ -18,7 +18,7 @@ Resources:
       CodeUri: bw-api/
       Handler: app.lambda_handler
       Runtime: python3.12
-      FunctionName: bw-api-func
+      FunctionName: assetRetrieval-bwAPI
       Architectures:
         - x86_64
       Policies:
