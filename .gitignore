@@ -171,6 +171,8 @@ instance/
 # Sphinx documentation
 docs/_build/
 
+samconfig.toml
+
 # PyBuilder
 target/
 
@@ -240,5 +242,8 @@ $RECYCLE.BIN/
 # Build folder
 
 */build/*
+
+# Docs
+docs/
 
 # End of https://www.gitignore.io/api/osx,linux,python,windows,pycharm,visualstudiocode
