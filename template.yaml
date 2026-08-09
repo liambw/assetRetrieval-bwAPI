@@ -18,7 +18,7 @@ Resources:
       CodeUri: bw-api/
       Handler: app.lambda_handler
       Runtime: python3.12
-      FunctionName: bw-api-func
+      FunctionName: assetRetrieval-bwAPI
       Architectures:
         - x86_64
       Policies:
@@ -31,7 +31,7 @@ Resources:
         BWAPI:
           Type: Api # More info about API Event Source: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#api
           Properties:
-            Path: /api/{client}/{identifier}
+            Path: /api/{identifier}
             Method: get
 
 Outputs:
